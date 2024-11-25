@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum ProgressStatus{
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectType {
+  RESEARCH
+  AGRICULTURE
+  BUSSINESS
+}
+
+enum ReactionStatus{
+  ACCEPTED
+  REJECTED
+  PENDING
+}
+
+model User {
+  id            Int         @id @default(autoincrement())
+  name          String
+  email         String      @unique
+  password      String
+  description   String?     @db.Text
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  // Relations
+  owned_projects    Project[]    @relation("ProjectOwner")
+  owned_agreements  Agreement[]  @relation("AgreementProjectOwner")
+  bid_agreements    Agreement[]  @relation("AgreementBidSubmitter")
+   @@map("users")
+}
+
+model Agreement {
+  id            Int         @id @default(autoincrement())
+  title         String
+  description   String?     @db.Text
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+  bider_status  ReactionStatus
+  owner_status  ReactionStatus
+  status        String
+
+  // Relations
+  project_owner_id   Int
+  project_owner      User              @relation("AgreementProjectOwner", fields: [project_owner_id], references: [id])
+  bid_submitter_id   Int
+  bid_submitter      User              @relation("AgreementBidSubmitter", fields: [bid_submitter_id], references: [id])
+  project_id         Int
+  project            Project           @relation(fields: [project_id], references: [id])
+  agreement_points   AgreementPoints[]
+
+  @@index([project_owner_id])
+  @@index([bid_submitter_id])
+  @@index([project_id])
+  @@map("agreements")
+}
+
+model AgreementPoints {
+  id            Int       @id @default(autoincrement())
+  description   String?   @db.Text
+  owner_status  ReactionStatus
+  bider_status  ReactionStatus
+
+  // Relations
+  agreement_id  Int
+  agreement     Agreement @relation(fields: [agreement_id], references: [id])
+
+  @@index([agreement_id])
+  @@map("agreement_points")
+}
+
+model Project {
+  id                  Int               @id @default(autoincrement())
+  title               String
+  description         String?           @db.Text
+  created_at          DateTime          @default(now())
+  updated_at          DateTime          @updatedAt
+  milestones          Int
+  milestones_achieved Int               @default(0)
+  type                ProjectType
+  status              ProgressStatus
+  // Relations
+  owner_id            Int
+  owner               User              @relation("ProjectOwner", fields: [owner_id], references: [id])
+  project_milestones  ProjectMilestones[]
+  agreements          Agreement[]
+
+  @@index([owner_id])
+   @@map("projects")
+}
+
+model ProjectMilestones {
+  id            Int       @id @default(autoincrement())
+  description   String?   @db.Text
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  status        ProgressStatus
+
+  // Relations
+  project_id    Int
+  project       Project   @relation(fields: [project_id], references: [id])
+
+  @@index([project_id])
+  @@map("milestones")
+}
+
