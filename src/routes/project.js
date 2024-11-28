@@ -59,4 +59,9 @@ router.get('/stats',util.authenticateToken,async(req,res)=>{
     }
     res.json({data:returnData,message:"stats retrieved",status:200}).status(200)
 })
+router.put('/changeStatus/:id/:status',util.authenticateToken,async(req,res)=>{
+    const id = Number(req.params.id)
+    const project = await projectService.updateProjectStatus(id,req.params.status)
+    res.json({data:project,message:"updated project",status:200}).status(200)
+})
 module.exports=router

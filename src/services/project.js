@@ -88,3 +88,13 @@ module.exports.countByUserAndStatus = async(id,status)=>{
     })
     return count
 }
+module.exports.updateProjectStatus = async(id, status)=>{
+    const project = await prisma.project.update({
+        where:{
+            id:id
+        },
+        data:{
+            status:status
+        }
+    })
+}
